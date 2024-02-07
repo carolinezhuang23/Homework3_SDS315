@@ -1,0 +1,138 @@
+---
+title: "Homework3_SDS315"
+author: "Caroline Zhuang"
+output:
+  pdf_document:
+    toc: yes
+---
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=3, fig.width=4, warning = FALSE)
+library(tidyverse)
+library(kableExtra)
+library(ggplot2)
+library(mosaic)
+
+
+creatinine <- read.csv('creatinine.csv')
+covid <- read.csv('covid.csv')
+marketmodel <- read.csv('marketmodel.csv')
+milk <- read.csv('milk.csv')
+```
+
+# **Problem 1** 
+```{r, echo = FALSE}
+model_creatclear = lm(creatclear ~ age, data = creatinine)
+coef(model_creatclear)
+```
+
+A) The creatinine clearance rate expected for a 55-year-old is 113.72 mL/minute. This can be determined by finding the linear model equation, which is y = -0.6198x + 147.8129, where y is the creatinine rate and x is the age, and then plugging in 55 for x. 
+
+B) Creatinine clearance rate decreases by -0.6198 mL/minute for every year that the age increases. This can be determined by the slope of the linear model equaion, which is around -0.1698. 
+
+C) For a 40 year old, we would expect the creatinine clearance rate to be around 141.02 mL/minute. For a 60 year old, we would expect the creatinine clearance rate to be 110.62 mL/minute. These numbers can be determined by plugging in the age into the linear model equation. For example, at age 40: y = -0.6189*40 + 147.8129. The actual rate for the 40 year old is lower than the expected rate, compared to the 60 year old, who has a higher rate than expected. This means that the 60 year old has a healther creatinine clearance rate. 
+
+# **Problem 2** 
+
+In this problem, we are looking at the beta of individual stocks. Beta is a number that represents the risk of stock value in comparison to the whole market, which in this case is SPY. A number that is lower than 1 means less risk, but also less return value. A number that is greater than 1 means more risk, but also a greater return value when the stock market is doing well. For example, if a stock's beta was 1.04 and the market gained 1.0%, then the stock increases by 1.04. However, if the market fell by 1.0%, the stock would also fall by 1.04%. A beta value of zero would mean that the market condition doesn't affect the stock value. In this problem, we are comparing the linear regression models of each stock. In the model, the slope is equal to the value of the stock value over the market value, which is the beta. 
+
+```{r, echo = FALSE}
+AAPL_table = marketmodel %>%
+  select(Date, SPY, AAPL)
+AAPL_model = lm(AAPL ~ SPY, data = AAPL_table)
+AAPL_coef = coef(AAPL_model)
+AAPL_rsq = rsquared(AAPL_model)
+
+GOOG_table = marketmodel %>%
+  select(Date, SPY, GOOG)
+GOOG_model = lm(GOOG ~ SPY, data = GOOG_table)
+GOOG_coef = coef(GOOG_model)
+GOOG_rsq = rsquared(GOOG_model)
+
+MRK_table = marketmodel %>%
+  select(Date, SPY, MRK)
+MRK_model = lm(MRK ~ SPY, data = MRK_table)
+MRK_coef = coef(MRK_model)
+MRK_rsq = rsquared(MRK_model)
+
+JNJ_table = marketmodel %>%
+  select(Date, SPY, JNJ)
+JNJ_model = lm(JNJ ~ SPY, data = JNJ_table)
+JNJ_coef = coef(JNJ_model)
+JNJ_rsq = rsquared(JNJ_model)
+
+WMT_table = marketmodel %>%
+  select(Date, SPY, WMT)
+WMT_model = lm(WMT ~ SPY, data = WMT_table)
+WMT_coef = coef(WMT_model)
+WMT_rsq = rsquared(WMT_model)
+
+TGT_table = marketmodel %>%
+  select(Date, SPY, TGT)
+TGT_model = lm(TGT~SPY, data = TGT_table)
+TGT_coef = coef(TGT_model)
+TGT_rsq = rsquared(TGT_model)
+
+market_residuals = bind_rows(AAPL_coef, GOOG_coef, JNJ_coef, MRK_coef, TGT_coef, WMT_coef) %>%
+  mutate(Name = c("AAPL", "GOOG", "JNJ", "MRK", "TGT", "WMT")) %>%
+  relocate(Name) %>%
+  mutate(R_squared = c(AAPL_rsq, GOOG_rsq, JNJ_rsq, MRK_rsq, TGT_rsq, WMT_rsq)) %>%
+  kbl(col.names = c("Name", "Intercept", "Slope", "R_squared")) %>%
+  kable_styling()
+
+market_residuals
+
+``` 
+
+In the table above, the slope represents the beta value of each stock. The R-squared column represents the proportion of variation in the y-variable (or stock-value) that can be predicted by the linear regression model. 
+
+As you can see, AAPL, or Apple, has the greatest beta value because it has the largest slope value. This means that Apple has the highest systematic risk. From the table, WMT, or Walmart, has the smallest slope value, therefore the smallest beta value and has the lowest systematic risk.  
+
+# **Problem 3** 
+```{r, echo = FALSE, fig.width = 5, fig.height = 5}
+italy  = covid %>%
+  filter(country == "Italy")
+spain = covid %>%
+  filter(country == "Spain")
+
+ggplot(italy) + 
+  geom_point(aes(x = days_since_first_death, y = log(deaths))) + 
+  geom_smooth(aes(x = days_since_first_death, y = log(deaths)), method='lm') + 
+  labs(title = "Italy Covid Deaths Model", x = "Days Since First Death")
+
+italy_model = lm(log(deaths) ~ days_since_first_death, data = italy)
+coef(italy_model)
+
+italy_double_rate = 70/18.3218
+```
+
+1. The estimated daily growth rate for Italy is 0.183 or 18.3% as seen in the fitted linear model. The doubling time for Italy is `r round(italy_double_rate)` days. 
+
+```{r, echo = FALSE, fig.width = 5, fig.height = 5}
+ggplot(spain)+
+  geom_point(aes(x = days_since_first_death, y = log(deaths))) + 
+  geom_smooth(aes(x = days_since_first_death, y = log(deaths)), method='lm') + 
+  labs(title = "Spain Covid Deaths Model", x = "Days Since First Death")
+
+spain_model = lm(log(deaths) ~ days_since_first_death, data = spain)
+coef(spain_model)
+
+spain_double_rate = 70/27.62447
+```
+
+2. The estimated daily growth rate for Spain is 0.276 or 27.6% as seen in the fitted linear model. The doubling time for Spain is `r round(spain_double_rate)` days. 
+
+```{r, echo = FALSE, fig.width = 5, fig.height = 5}
+ggplot(covid) + 
+  geom_smooth(aes(x = days_since_first_death, y = log(deaths), color = country), method = 'lm') + 
+  labs(title = "Linear Model of COVID Deaths", x = "Days Since First Death")
+```
+
+# **Problem 4** 
+
+```{r, echo = FALSE}
+milk_model = lm(log(sales) ~ log(price), data = milk)
+coef(milk_model)
+```
+
+The estimated elasticity for milk is -1.62%, meaning that when the price of milk goes up by 1%, consumers want to buy around 1.62% less milk. This was calculated by fitting milk into a linear regression model by taking the log of both x and y variables, which in this case where price and sales respectively. 
